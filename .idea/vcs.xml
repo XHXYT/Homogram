@@ -2,6 +2,6 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/features/home/src/main/rust" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/features/home/src/main/native/homogrape" vcs="Git" />
   </component>
 </project>
