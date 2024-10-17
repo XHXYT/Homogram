@@ -1,4 +1,8 @@
-# Homogram
+<p align="center">
+  <img src="./assets/logo.png" width="20%" style="border-radius:25%"/>
+</p>
+
+<h1 align="center">Homogram</h1>
 
 Homogram is a 3rd-party Telegram client for [HarmonyOS Next](https://developer.huawei.com/consumer/cn/), driven by
 ArkTS/ArkUI (UI-layer) and Rust (native-layer).
