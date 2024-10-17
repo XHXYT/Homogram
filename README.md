@@ -64,8 +64,12 @@ if you implement something cool!
 
 - [grammers](https://github.com/Lonami/grammers), a set of Rust libraries to interact with Telegram's API.
 - [ohos-rs](https://github.com/ohos-rs/ohos-rs), a`napi-rs` adaptation for OpenHarmony SDK.
+- [一多开发实例-即时通讯](https://gitee.com/harmonyos_codelabs/MultiDeviceCommunication), a sample project for
+  developing IM APPs
+  HarmonyOS Next.
 
-These two projects are the backbone of Homogram and without them, this project would not be possible. Tremendous thanks
+These projects are the backbone of Homogram and without them, this project would not be possible. Tremendous
+thanks
 to [@Lonami](https://github.com/Lonami),
 [@richerfu](https://github.com/richerfu), and all contributors!
 
