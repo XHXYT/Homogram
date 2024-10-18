@@ -60,7 +60,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="" scope="PROVIDED">
-      <library name="libhomoapp_native.so" type="ArkUI">
+      <library name="libhomogrape.so" type="ArkUI">
         <CLASSES />
         <JAVADOC />
         <SOURCES />

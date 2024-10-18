@@ -173,6 +173,7 @@ export struct ChatList {
             .width(BaseConstants.FULL_WIDTH)
         }
       }
+      .height(BaseConstants.FULL_PERCENT)
       // .nestedScroll({
       //   scrollForward: NestedScrollMode.PARENT_FIRST,
       //   scrollBackward: NestedScrollMode.SELF_FIRST

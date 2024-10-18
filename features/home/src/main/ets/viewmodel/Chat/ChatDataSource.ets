@@ -50,6 +50,14 @@ export class ChatDataSource implements IDataSource {
   }
 
   add(chat: Chat): void {
+    Logger.debug('ChatDataSource add try to acquire lock');
+    this.lock_.lockAsync(() => {
+      Logger.debug('ChatDataSource add lock acquired');
+      this._add(chat);
+    }, ArkTSUtils.locks.AsyncLockMode.EXCLUSIVE);
+  }
+
+  _add(chat: Chat): void {
     // We should check the following cases in sequence:
     // 1. chat is already in pinned chats
     //  For case 1, we should modify the chat, but keep the chat in the same position.
@@ -62,6 +70,7 @@ export class ChatDataSource implements IDataSource {
 
     // case 1: chat is already in pinned chats
     if (this.pinnedChatsMap.hasKey(chat.chatId.toString())) {
+      Logger.debug('ChatDataSource add chat is already in pinned chats, chat name: ' + chat.name);
       this.modify(chat);
       return;
     }
@@ -69,47 +78,34 @@ export class ChatDataSource implements IDataSource {
     // case 2: chat is already in unpinned chats
     let old_index = this.sortedUnpinnedChatsMap.indexOf(chat.chatId.toString());
     if (old_index >= 0) { // chat is already in unpinned chats
+      Logger.debug('ChatDataSource add chat is already in unpinned chats, chat name: ' + chat.name + ', index: ' + old_index);
       let new_index = this.sortedUnpinnedChatsMap.set(chat.chatId.toString(), chat);
       if (new_index !== old_index) {
-        Logger.debug('new_index !== old_index: ' + new_index + ' ' + old_index);
+        Logger.debug('ChatDataSource add chat is already in unpinned chats, new_index !== old_index: ' + new_index + ' ' + old_index);
         // this.notifyDataMove(old_index + this.pinnedChatsMap.length, new_index + this.pinnedChatsMap.length);
         // this.notifyDataChange(new_index + this.pinnedChatsMap.length);
         this.notifyDataReload();
       } else {
-        Logger.debug('new_index === old_index: ' + new_index + ' ' + old_index);
+        Logger.debug('ChatDataSource add chat is already in unpinned chats, new_index === old_index: ' + old_index);
         this.notifyDataChange(new_index + this.pinnedChatsMap.length);
       }
       return;
     } else {
-      Logger.debug('old_index < 0');
+      Logger.debug('ChatDataSource add new chat chat is not in any chats, old_index < 0, chat name:' + chat.name);
       // case 3: chat is not in either pinned or unpinned chats
       let new_index = -1;
       if (chat.pinned) {
+        Logger.debug('ChatDataSource add new chat chat is not in any chats, chat is pinned, chat name:' + chat.name);
         this.pinnedChatsArray.push(chat);
         this.pinnedChatsMap.set(chat.chatId.toString(), chat);
         new_index = this.pinnedChatsArray.length - 1;
+      } else {
+        Logger.debug('ChatDataSource add new chat chat is not in any chats, chat is not pinned, chat name:' + chat.name);
+        new_index = this.sortedUnpinnedChatsMap.set(chat.chatId.toString(), chat) + this.pinnedChatsMap.length;
       }
-      new_index = this.sortedUnpinnedChatsMap.set(chat.chatId.toString(), chat) + this.pinnedChatsMap.length;
       this.notifyDataAdd(new_index); // TODO: test this
       return;
     }
-
-    // if (this.sortedUnpinnedChatsMap.has(chat.chatId.toString()) ||
-    // this.pinnedChatsMap.hasKey(chat.chatId.toString())) {
-    //   this.modify(chat);
-    //   return;
-    // }
-    // let index = -1;
-    // if (chat.pinned) {
-    //   this.pinnedChatsArray.push(chat);
-    //   this.pinnedChatsMap.set(chat.chatId.toString(), chat);
-    //   index = this.pinnedChatsArray.length - 1; // at least 0
-    // } else {
-    //   index = this.sortedUnpinnedChatsMap.set(chat.chatId.toString(), chat) + this.pinnedChatsMap.length;
-    // }
-    // if (index >= this.pinnedChatsArray.length - 1) {
-    //   this.notifyDataAdd(index);
-    // } // TODO: print some log if index < 0
   }
 
   addChatsFromPinnedAndUnpinnedArrays(pinnedChats: Chat[], unpinnedChats: Chat[]): void {

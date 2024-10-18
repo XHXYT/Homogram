@@ -660,13 +660,11 @@ export struct Index {
       lastMessageIds.set(chat.chatId.toString(), chat.lastMessageId);
     }
     let lastMessageIdsRecord = mapToRecord(lastMessageIds);
-    loadChatsWithOffset(lastMessageIdsRecord)
-      .then(() => {
-        this.isLoadingNewMessages = false;
-        Logger.debug('loadNewMessages finished');
-      })
+    await loadChatsWithOffset(lastMessageIdsRecord)
       .catch((err: Error) => {
         Logger.error('loadNewMessages failed. Cause: ' + err.name + "-" + err.message);
       });
+    this.isLoadingNewMessages = false;
+    Logger.debug('loadNewMessages finished');
   }
 }
