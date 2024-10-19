@@ -178,7 +178,12 @@ export struct ChatDetailBottom {
           })
           .onSubmit((enterKey: EnterKeyType) => {
             if (enterKey == EnterKeyType.Send) {
-              this.sendMessage();
+              try {
+                this.sendMessage();
+                Logger.debug("sendMessage: " + this.text);
+              } catch (e) {
+                Logger.error("sendMessage error: " + e.message);
+              }
             }
           })
       }

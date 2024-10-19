@@ -75,7 +75,11 @@ export async function getOrDownloadProfilePhoto(chatId: number): Promise<string 
     if (profilePhotoPath.count === 0) {
       // download profile photo
       Logger.debug(`Chat ${chatId}: profile photo not found, should download`);
-      return await downloadProfilePhoto(chatId);
+      return await downloadProfilePhoto(chatId)
+        .catch((e: Error) => {
+          Logger.error(`Chat ${chatId}: failed to download profile photo: ${e}`);
+          return undefined;
+        });
     } else {
       Logger.debug(`Chat ${chatId}: profile photo found: ${profilePhotoPath.current}`);
       return profilePhotoPath.current;

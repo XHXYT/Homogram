@@ -453,17 +453,20 @@ export struct Index {
                   .catch((e: Error) => {
                     Logger.error('Home page onAppear getMe error ' + e);
                   });
-
+                // this.loadNewMessages()
+                //   .then(() => {
+                //     this.isLoadingNewMessages = false;
+                //     Logger.debug('Home page onAppear loadNewMessages finished');
+                //   })
+                //   .catch((e: Error) => {
+                //     Logger.error('Home page onAppear loadNewMessages error ' + e);
+                //   });
                 Logger.debug('Home page onAppear isLoggedIn');
                 this.isLoadingNewMessages = false;
-                // this.loadNewMessages().then(() => {
-                //   Logger.debug('Home page onAppear loadNewMessages finished');
-                // }).catch((e: Error) => {
-                //   Logger.error('Home page onAppear loadNewMessages error ' + e);
-                // });
-                run().catch((e: Error) => {
-                  Logger.error('Home page onAppear run error ' + e);
-                });
+                run()
+                  .catch((e: Error) => {
+                    Logger.error('Home page onAppear run error ' + e);
+                  });
               } else {
                 Logger.debug('Home page onAppear not isLoggedIn');
                 this.pageInfo.pushPath({
@@ -526,7 +529,6 @@ export struct Index {
     let onForegroundEvent: emitter.InnerEvent = { eventId: 0 };
     emitter.on(onForegroundEvent, async () => {
       Logger.debug('Home page onForegroundEvent');
-      // this.loadNewMessages()
       let is_authorized = await reconnect().catch((e: Error) => {
         Logger.error('Home page onForegroundEvent reconnect error ' + e);
       });
@@ -534,6 +536,7 @@ export struct Index {
         Logger.debug('Home page onForegroundEvent reconnect not authorized');
         return;
       }
+      // this.loadNewMessages();
       run()
         .catch((err: Error) => {
           Logger.error('Home page onForegroundEvent Failed to homo::tg::run(). Cause: ' + err.name + "-" + err.message);
