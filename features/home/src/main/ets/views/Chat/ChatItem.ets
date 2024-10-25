@@ -102,16 +102,16 @@ export struct ChatItem {
     })
   }
 
-  aboutToAppear(): void {
+  async aboutToAppear(): Promise<void> {
     let node = getChatPhotoNode(this.chatData?.chatId);
     if (node === undefined) {
-      getOrDownloadProfilePhoto(this.chatData?.chatId || 0)
-        .then((path) => {
-          this.profilePhotoPath = path;
-          this.profilePhotoLoaded = true;
-          createChatPhotoNode(this.getUIContext(), this.chatData?.chatId, this.profilePhotoPath);
-          this.chatPhotoNodeController = getChatPhotoNode(this.chatData?.chatId);
-        });
+      this.profilePhotoPath = await getOrDownloadProfilePhoto(this.chatData?.chatId || 0);
+      this.profilePhotoLoaded = true;
+      let thumb = await getThumbProfilePhotoPixelMap(this.seenChatsMap.get(this.chatData?.chatId.toString())?.photoThumb);
+      this.profilePhotoPixelMap = thumb;
+      this.isPixelMapReady = true;
+      createChatPhotoNode(this.getUIContext(), this.chatData?.chatId, this.profilePhotoPath, this.profilePhotoPixelMap);
+      this.chatPhotoNodeController = getChatPhotoNode(this.chatData?.chatId);
     } else {
       this.chatPhotoNodeController = node;
     }

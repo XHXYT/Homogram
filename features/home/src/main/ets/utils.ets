@@ -6,11 +6,9 @@ import { Logger, stringToBuffer } from '@ohos/base';
 import { getProfilePhotoPathAndCount } from 'libhomogrape.so';
 import { downloadProfilePhoto } from 'libhomogrape.so';
 
-export async function getThumbProfilePhotoPixelMap(chatId: string | undefined,
-  seenChatsMap: HashMap<string, SeenChat>): Promise<image.PixelMap | undefined> {
-  if (chatId) {
-    let b = seenChatsMap.get(chatId.toString())?.photoThumb;
-    if (b) {
+export async function getThumbProfilePhotoPixelMap(
+  thumb: string | undefined): Promise<image.PixelMap | undefined> {
+    if (thumb) {
       // https://github.com/telegramdesktop/tdesktop/blob/1757dd856b84d23f83d4e562c94dde825f6eb40c/Telegram/SourceFiles/ui/image/image.cpp#L93
       let header = new Uint8Array([
         0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49
@@ -53,7 +51,7 @@ export async function getThumbProfilePhotoPixelMap(chatId: string | undefined,
 
       let footer = new Uint8Array([0xFF, 0xD9]);
 
-      let decodedBytes = Base64.decode(b);
+      let decodedBytes = Base64.decode(thumb);
       header[164] = decodedBytes[1];
       header[166] = decodedBytes[2];
       let merged = new Uint8Array(header.length + decodedBytes.length - 3 + footer.length);
@@ -64,7 +62,6 @@ export async function getThumbProfilePhotoPixelMap(chatId: string | undefined,
         desiredDynamicRange: image.DecodingDynamicRange.AUTO,
       });
     }
-  }
   return undefined;
 }
 

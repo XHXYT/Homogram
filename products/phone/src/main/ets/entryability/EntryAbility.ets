@@ -23,6 +23,7 @@ import { registerDevice, run, stop, reconnect, EventConstants } from '@ohos/home
 import { pushService } from '@kit.PushKit';
 import { emitter } from '@kit.BasicServicesKit';
 import AppDB from '../AppDB';
+import { ImageKnife } from '@ohos/imageknife';
 
 const PREF_STORE_NAME = 'tg_preferences';
 const KEY_CURRENT_SESSION = 'tg_current_session';
@@ -48,6 +49,7 @@ export default class EntryAbility extends UIAbility {
     // AppStorage.setOrCreate('KV', this.KV);
     // Database.deleteRdb(this.context);
     this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
+    ImageKnife.getInstance().initFileCache(this.context, 256, 256 * 1024 * 1024);
     try {
       AppDB.initDb(this.context);
       Logger.info('Database initialized successfully');
