@@ -151,7 +151,7 @@ export class HomeConstants {
   static readonly MESSAGE_REPLY_TO_PREVIEW_DIVIDER_WIDTH = 4;
   static readonly MESSAGE_REPLY_TO_PREVIEW_TOP_MARGIN = 8;
   static readonly MESSAGE_TIME_COLOR = $r("app.color.message_time_color");
-  static readonly PROFILE_PHOTO_SIZE = '48vp';
+  static readonly PROFILE_PHOTO_SIZE = 48;
   static readonly FORUM_TOPIC_LIST_PHOTO_SIZE = '96vp';
   static readonly PROFILE_PHOTO_SIZE_SMALL = '40vp';
 }

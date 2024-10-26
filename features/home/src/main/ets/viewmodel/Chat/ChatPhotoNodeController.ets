@@ -1,46 +1,87 @@
 // CustomComponent.ets
 // 自定义占位节点，跨容器迁移能力
-import { BuilderNode, FrameNode, NodeController } from '@kit.ArkUI';
+import { BuilderNode, display, FrameNode, NodeController } from '@kit.ArkUI';
 import { Logger } from '@ohos/base';
 import { HomeConstants } from '../../constants/HomeConstants';
 import { getOrDownloadProfilePhoto, getThumbProfilePhotoPixelMap } from '../../utils';
 import { HashMap } from '@kit.ArkTS';
 import { ImageKnifeComponent, ImageKnifeOption } from '@ohos/imageknife';
 import { image } from '@kit.ImageKit';
+import { resourceManager } from '@kit.LocalizationKit';
 
 class ChatPhotoData {
   chatId: number | undefined = undefined;
   path: string | undefined = undefined;
   thumb: image.PixelMap | undefined = undefined;
+  myThis?: Object | undefined = undefined;
 }
 
+/**
+ * 生成圆形渐变背景字母图片
+ * @param size 图片尺寸（宽高相等）
+ * @param letter 要显示的字母
+ * @param startColor 渐变起始颜色（RGB格式，例如：'#FF0000'）
+ * @param endColor 渐变结束颜色（RGB格式，例如：'#0000FF'）
+ * @returns Promise<PixelMap>
+ */
+function createCircleLetterPixelMap(
+  letter: string,
+  myThis?: Object | undefined
+): PixelMap {
+  const context: Context = getContext(myThis);
+  const resourceMgr : resourceManager.ResourceManager = context.resourceManager;
+
+  let data = resourceMgr.getMediaContentSync($r('app.media.fallback_vibrant_orange_gradient'));
+  const imageSource = image.createImageSource(data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset));
+  const imageOpts: image.DecodingOptions = {
+    editable: true,
+    desiredSize: {
+      height: HomeConstants.PROFILE_PHOTO_SIZE,
+      width: HomeConstants.PROFILE_PHOTO_SIZE
+    }
+  };
+  const pixelMap = imageSource.createPixelMapSync(imageOpts);
+
+  let offScreenCanvas = new OffscreenCanvas(HomeConstants.PROFILE_PHOTO_SIZE, HomeConstants.PROFILE_PHOTO_SIZE);
+  let offScreenContext = offScreenCanvas.getContext("2d");
+  const imageScale = 1.0;
+  offScreenContext.drawImage(pixelMap, 0, 0, offScreenCanvas.width, offScreenCanvas.height);
+  offScreenContext.textAlign = 'center';
+  offScreenContext.textBaseline = 'middle';
+  offScreenContext.fillStyle = '#00000000';
+  offScreenContext.font = 32 * imageScale + "vp";
+  offScreenContext.fillText(letter.toUpperCase(), offScreenCanvas.width - 24 * imageScale,
+    offScreenCanvas.height - 16 * imageScale);
+
+  return offScreenContext.getPixelMap(0, 0, offScreenCanvas.width, offScreenCanvas.height);
+}
+
+// async function customGetImage(context: Context, src: string | PixelMap | Resource): Promise<ArrayBuffer | undefined> {
+//   let pixelMap = createCircleLetterPixelMap("T", undefined);
+//   let info = pixelMap.getImageInfoSync();
+//   let size = info.size.width * info.size.height * 4 * 2;
+//   let buffer = new ArrayBuffer(size);
+//   pixelMap.readPixelsToBuffer(buffer);
+//   return buffer;
+// }
+
 @Builder
-async function ChatPhotoBuilder(data: ChatPhotoData) {
-  // Image("file://" + data.path)
-  //   .height($r('app.float.avatar_image_size'))
-  //   .width($r('app.float.avatar_image_size'))
-  //   .clipShape(new Circle({
-  //     width: HomeConstants.PROFILE_PHOTO_SIZE,
-  //     height: HomeConstants.PROFILE_PHOTO_SIZE
-  //   }))
-  //   .id(data.chatId?.toString())
+async function ChatPhotoBuilder(data: ChatPhotoData, myThis?: Object | undefined) {
   ImageKnifeComponent({
     imageKnifeOption: new ImageKnifeOption({
       loadSrc: "file://" + data.path,
       placeholderSrc: data.thumb,
-      errorholderSrc: data.thumb,
+      // errorholderSrc: createCircleLetterPixelMap("T", myThis),
+      errorholderSrc: $r('app.media.fallback_vibrant_orange_gradient'),
       objectFit: ImageFit.Auto,
       border: {
         radius: 50
-      }
+      },
+      // customGetImage: customGetImage,
     })
   })
     .width(HomeConstants.PROFILE_PHOTO_SIZE)
     .height(HomeConstants.PROFILE_PHOTO_SIZE)
-    // .clipShape(new Circle({
-    //   width: HomeConstants.PROFILE_PHOTO_SIZE,
-    //   height: HomeConstants.PROFILE_PHOTO_SIZE
-    // }))
     .id(data.chatId?.toString())
 }
 
@@ -69,7 +110,8 @@ export class ChatPhotoNodeController extends NodeController {
     this.data = {
       chatId: chatId,
       path: path,
-      thumb: thumb
+      thumb: thumb,
+      myThis: this,
     };
     this.chatPhotoNode.build(wrapBuilder<ChatPhotoData[]>(ChatPhotoBuilder), this.data);
   }
