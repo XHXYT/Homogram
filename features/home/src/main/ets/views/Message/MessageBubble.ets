@@ -16,6 +16,34 @@ import { SeenChat } from '../../entities/SeenChat';
 import { getOrDownloadProfilePhoto, getThumbProfilePhotoPixelMap } from '../../utils';
 import { ReplyToPreview } from './ReplyToPreview'
 import { MessageDataSource } from '../../viewmodel/Message/MessageDataSource';
+import { MediaModel, MediaPreview, MediaPreviewOptions, MediaPreviewComponent } from '@lyb/media-preview';
+
+enum DefaultMediaType {
+  IMAGE,
+  VIDEO
+}
+
+class DefaultMediaModel extends MediaModel {
+  /**
+   * 类型
+   */
+  type: DefaultMediaType = DefaultMediaType.IMAGE
+  /**
+   * 资源图片
+   */
+  sourceSrc?: ResourceStr
+  /**
+   * 缩略图
+   */
+  thumbSrc?: ResourceStr
+
+  constructor(sourceSrc?: ResourceStr, thumbSrc?: ResourceStr, type: DefaultMediaType = DefaultMediaType.IMAGE) {
+    super();
+    this.sourceSrc = sourceSrc
+    this.thumbSrc = thumbSrc
+    this.type = type
+  }
+}
 
 @Component
 export struct MessageBubble {
@@ -32,6 +60,8 @@ export struct MessageBubble {
   @State profilePhotoLoaded: boolean = false;
   @State profilePhotoLoadFailed: boolean = false;
   @State profilePhotoPixelMap: PixelMap | undefined = undefined;
+  @State mediaPreviewIndex: number = -1;
+  @State mediaResources: DefaultMediaModel[] = [];
   @Consume currentChatId: string;
   @Consume isScrollingDueToReplyToMessage: boolean;
   @Consume scrollToRepliedMessageIndex: number;
@@ -54,6 +84,23 @@ export struct MessageBubble {
     0,
     0,
   );
+  private mediaPreviewOptions: MediaPreviewOptions = new MediaPreviewOptions()
+    .setBackgroundColor(Color.Black)
+    .setPageChangedListener((_item, index) => {
+      this.mediaPreviewIndex = index;
+    })
+    .setBackListener(() => {
+      this.mediaPreviewIndex = -1;
+    })
+    .setLongPressListener((_item, index) => {
+      console.log(`MessageBubble Media 长按了第${index + 1}个资源`);
+    })//TODO: 可以自定义id
+    .setIdBuilder((_item, index) => {
+      return `media_${index}`
+    })//TODO: 设置thumb可以优化一镜到底效果，可以注释对比效果
+    .setThumbBuilder((item, index) => {
+      this.Media(item as DefaultMediaModel, index)
+    });
 
   build() {
     Column() {
@@ -137,7 +184,28 @@ export struct MessageBubble {
                     .alignSelf(ItemAlign.Start)
                 }
                 if (this.message?.mediaType === MediaType.Photo) {
-                  this.Media()
+                  List({ space: 10 }) {
+                    ForEach(this.mediaResources, (item: DefaultMediaModel, index: number) => {
+                      ListItem() {
+                        this.Media(item, index)
+                      }
+                      //TODO: 设置id，不然不会显示一镜到底效果
+                      .id(this.mediaPreviewOptions.idBuilder(item, index))
+                      //TODO: 如果列表数据模型和mediaPreview的数据模型不一致，可以自己设置，不过要和上面的`setIdBuilder`中id一致
+                      .id(`media_${index}`)
+                      .aspectRatio(1)
+                      .clickEffect({ level: ClickEffectLevel.MIDDLE, scale: 0.8 })
+                      //TODO: 仿微信那种资源在预览时原始资源隐藏显示
+                      .visibility(index == this.mediaPreviewIndex ? Visibility.Hidden : Visibility.Visible)
+                      .onClick(() => {
+                        Logger.debug("MessageBubble Media onClick: " + index);
+                        this.mediaPreviewOptions
+                          .setInitIndex(index)
+                          .setMedias(this.mediaResources);
+                        MediaPreview.open(this.getUIContext(), this.mediaPreviewOptions);
+                      })
+                    }, (item: DefaultMediaModel, index: number) => JSON.stringify(item) + index)
+                  }
                 }
                 this.MessageContent()
                 Row() {
@@ -214,6 +282,15 @@ export struct MessageBubble {
     .margin({ left: 5, right: 5 })
   }
 
+  aboutToAppear(): void {
+    if (this.mediaResources.length == 0) {
+      this.loadMedia();
+      this.mediaResources = [
+        new DefaultMediaModel(this.mediaPath, this.mediaPath)
+      ];
+    }
+  }
+
   @Builder
   MessageContent() {
     Text(this.message?.text)
@@ -227,21 +304,18 @@ export struct MessageBubble {
   }
 
   @Builder
-  Media() {
+  Media(item: DefaultMediaModel, index: number) {
     Stack() {
-      Flex() {
-      }
-      .height($r('app.float.applet_image_height'))
-      .width($r('app.float.applet_image_width'))
-      .backgroundImage("file://" + this.mediaPath)
-      // .backgroundImageSize({
-      //   width: $r('app.float.applet_image_width'),
-      //   height: $r('app.float.applet_image_height')
-      // })
-      .backgroundImageSize(ImageSize.Contain)
-      .constraintSize({ maxWidth: BaseConstants.FULL_WIDTH })
-      .margin({ bottom: $r('app.float.applet_image_bottom') })
-
+      Image("file://" + item.thumbSrc)
+        .objectFit(ImageFit.Auto)
+        .margin({ bottom: $r('app.float.applet_image_bottom') })
+        .borderRadius(6)
+        .clip(true)
+      Image($r('app.media.play'))
+        .width('30vp')
+        .height('30vp')
+        .fillColor(Color.White)
+        .visibility(item.type == DefaultMediaType.VIDEO ? Visibility.Visible : Visibility.None)
       if (!this.mediaLoaded) {
         if (this.mediaLoadFailed) {
           Text("Retry")
@@ -267,17 +341,6 @@ export struct MessageBubble {
     .alignSelf(ItemAlign.Start)
     .onAppear(() => {
       this.loadMedia();
-    })
-    .onClick(() => {
-      this.mediaPath =
-        BaseConstants.BASE_DIR + this.message?.chatId.toString() + "/" + this.message?.messageId.toString() + ".jpg";
-      Logger.debug("Media onClick: " + this.mediaPath);
-      if (!fs.accessSync(this.mediaPath)) {
-        Logger.debug("Media onClick: media not exists, downloading media");
-        this.loadMedia();
-      }
-
-      // TODO: show media in full screen
     })
   }
 
